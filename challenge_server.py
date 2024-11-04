@@ -7,7 +7,6 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import unpad, pad
 
 from shared_constants import (
-    IV,
     SERVER_IP,
     SERVER_PORT,
     CORRECT_MESSAGE,
@@ -15,8 +14,18 @@ from shared_constants import (
     INVALID_MESSAGE,
 )
 
+# Configuration for the server
 MESSAGE = b"Throughout the ages, civilizations have risen and fallen, each leaving behind echoes of their existence, traces of their once-great empires scattered across the pages of history. The ancient cities, now buried under layers of earth, speak of cultures that thrived in ways we can only imagine, of peoples who knew the secrets of the stars and whose knowledge rivaled the greatest minds of today. These cities, with their faded murals and crumbling walls, serve as silent reminders of a world lost to time. Legends tell of vast libraries filled with scrolls of wisdom, of marketplaces brimming with the finest goods from across the lands, and of grand temples that reached toward the heavens. The stories of their kings and queens, their warriors and poets, survive in the fragments we uncover, painting a picture of a world both strange and familiar. Yet, for all our knowledge, there remains much that is hidden, mysteries locked away in the shadows of antiquity. In the distant sands of forgotten deserts, under the canopy of ancient forests, and atop mountains that pierce the sky, remnants of these lost eras wait to be discovered. And for every artifact unearthed, for every ruin explored, there are countless more that remain unseen, waiting for the day when they will once again feel the light of day. For those who dare to seek them, the rewards are more than mere riches; they are the answers to questions as old as humanity itself.In this endless quest for knowledge, we are united by our shared curiosity, our relentless pursuit of understanding. The world is vast, and our journey has only just begun."
+
 KEY = get_random_bytes(AES.block_size)
+# For testing purposes, set a fixed key and IV
+# KEY = b''
+IV = get_random_bytes(AES.block_size)
+# IV = b''
+
+print(
+    f"[DEBUG] KEY: {KEY}, IV: {IV}, KEY hex: {KEY.hex()}, IV hex: {IV.hex()}, MESSAGE length: {len(MESSAGE)}"
+)
 
 
 class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -49,7 +58,7 @@ def challenge(req: socket):
                 # Send Unauthorized if the decrypted message is different from the original message
                 req.sendall(INVALID_MESSAGE)
 
-        except ValueError as e:
+        except ValueError:
             # Send Invalid padding if the padding is incorrect
             req.sendall(INVALID_PADDING)
 
@@ -59,9 +68,9 @@ def challenge(req: socket):
 
 
 def main():
-    print(f"Plaintext: {MESSAGE}")
+    # print(f"Plaintext: {MESSAGE}")
     padded_plaintext = pad(MESSAGE, AES.block_size)
-    print(f"Padded plaintext: {padded_plaintext}")
+    # print(f"Padded plaintext: {padded_plaintext}")
 
     block_cipher = AES.new(KEY, AES.MODE_CBC, IV)
     encrypted_ciphertext = block_cipher.encrypt(padded_plaintext)
@@ -72,10 +81,6 @@ def main():
     socketserver.TCPServer.allow_reuse_address = True
     server = TCPServer((SERVER_IP, SERVER_PORT), ChallengeRequestHandler)
     print(f"Server started on {SERVER_IP}:{SERVER_PORT}")
-
-    print(
-        f"[DEBUG] KEY: {KEY.hex()}, KEY length: {len(KEY)}, IV: {IV}, IV length: {len(IV)}"
-    )
 
     server.serve_forever()
 
