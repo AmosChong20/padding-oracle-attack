@@ -15,9 +15,9 @@ app.use(cors());
 const ws = new WebSocket(`${SERVER_IP}:${SERVER_PORT}`);
 
 async function decryptMiddleware(req, res, next) {
-  const { data } = req.body;
-  console.log("Received data: ", data);
-  if (!data) {
+  const { password } = req.body;
+  console.log("Received data: ", password);
+  if (!password) {
     return res.status(400).send({ error: 'No encrypted message provided' });
   }
 
@@ -29,7 +29,7 @@ async function decryptMiddleware(req, res, next) {
 
   // Send the encrypted message through the WebSocket
   console.log("----------------------Perform decryption----------------------");
-  ws.send(data);
+  ws.send(password);
 
   // Handle the response from the WebSocket server
   ws.on('message', (data) => {

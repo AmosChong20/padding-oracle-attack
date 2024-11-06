@@ -1,4 +1,3 @@
-import socket
 from base64 import b64encode, b64decode
 import asyncio
 import websockets
@@ -9,8 +8,8 @@ from shared_constants import SERVER_IP, SERVER_PORT, INVALID_PADDING
 from Crypto.Util.Padding import unpad
 
 # Attacker to fill in the following values
-CIPHERTEXT =  b'zU6LuKf4JzcWeF7N6iS6SFvHEKN/RPPtfI1gRKGSGm4='
-IV = b'\x8f\xc6\x19\x80\xf5\xa3\xcbtj\xae\x10\x11\xdd\xec\x7f\xfe'
+CIPHERTEXT =  b'2PgoWm1gaXd4y7AZWIPMA32kDjoB+yd6BaTLI2vUgnM='
+IV = b'\x03\xd5\xcb\xfe\xa5\xf2\x8fo;\x9c\xe75\x83\x87\xbe\xbb'
 
 BLOCK_SIZE = AES.block_size
 
@@ -64,23 +63,7 @@ async def main():
     # Use padding oracle attack to retrieve the plaintext
     plaintext = await padding_oracle_attack(IV, decoded_ciphertext)
 
-    print(f"Decrypted message: {plaintext}")
-    # Connect to the server
-    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-    #     print(f"Connecting to {SERVER_IP}:{SERVER_PORT}")
-    #     sock.connect((SERVER_IP, SERVER_PORT))
-
-    #     # Ciphertext of the known message padded and encrypted with server's key
-    #     ciphertext = CIPHERTEXT
-    #     iv = IV
-
-    #     # Decode base64 ciphertext received from the server
-    #     decoded_ciphertext = b64decode(ciphertext)
-        
-    #     # Use padding oracle attack to retrieve the plaintext
-    #     plaintext = padding_oracle_attack(sock, iv, decoded_ciphertext)
-
-    #     print(f"Decrypted message: {plaintext}")
+    print(f"Decrypted message: {unpad(plaintext, BLOCK_SIZE)}")
 
 
 if __name__ == "__main__":
