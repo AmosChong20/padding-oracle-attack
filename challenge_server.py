@@ -1,10 +1,9 @@
-import socketserver
-from base64 import b64decode, b64encode
-from socket import socket
-
+import asyncio
+import websockets
+from base64 import b64encode, b64decode
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from Crypto.Util.Padding import unpad, pad
+from Crypto.Util.Padding import pad, unpad
 
 from shared_constants import (
     SERVER_IP,
@@ -15,60 +14,65 @@ from shared_constants import (
 )
 
 # Configuration for the server
-MESSAGE = b"Throughout the ages, civilizations have risen and fallen, each leaving behind echoes of their existence, traces of their once-great empires scattered across the pages of history. The ancient cities, now buried under layers of earth, speak of cultures that thrived in ways we can only imagine, of peoples who knew the secrets of the stars and whose knowledge rivaled the greatest minds of today. These cities, with their faded murals and crumbling walls, serve as silent reminders of a world lost to time. Legends tell of vast libraries filled with scrolls of wisdom, of marketplaces brimming with the finest goods from across the lands, and of grand temples that reached toward the heavens. The stories of their kings and queens, their warriors and poets, survive in the fragments we uncover, painting a picture of a world both strange and familiar. Yet, for all our knowledge, there remains much that is hidden, mysteries locked away in the shadows of antiquity. In the distant sands of forgotten deserts, under the canopy of ancient forests, and atop mountains that pierce the sky, remnants of these lost eras wait to be discovered. And for every artifact unearthed, for every ruin explored, there are countless more that remain unseen, waiting for the day when they will once again feel the light of day. For those who dare to seek them, the rewards are more than mere riches; they are the answers to questions as old as humanity itself.In this endless quest for knowledge, we are united by our shared curiosity, our relentless pursuit of understanding. The world is vast, and our journey has only just begun."
-
+MESSAGE = b"Hello, this is a test message!"
 KEY = get_random_bytes(AES.block_size)
-# For testing purposes, set a fixed key and IV
-# KEY = b''
 IV = get_random_bytes(AES.block_size)
-# IV = b''
 
 print(
     f"[DEBUG] KEY: {KEY}, IV: {IV}, KEY hex: {KEY.hex()}, IV hex: {IV.hex()}, MESSAGE length: {len(MESSAGE)}"
 )
 
-
-class TCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    pass
-
-
-class ChallengeRequestHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        while True:
-            challenge(self.request)
-
-
-def challenge(req: socket):
+async def handle_connection(websocket, path):
     while True:
         try:
-            ciphertext = req.recv(4096)
-            if not ciphertext:
-                # Exit the loop if no data is received (client disconnected)
+            data = await websocket.recv()
+            if not data:
                 break
-
-            ciphertext = b64decode(ciphertext)
-            padded_plaintext = AES.new(KEY, AES.MODE_CBC, IV).decrypt(ciphertext)
-            plaintext = unpad(padded_plaintext, AES.block_size)
-            # print(f"Received plaintext: {plaintext}")
-
-            if plaintext == MESSAGE:
-                # Send OK if the decrypted message is the same as the original message
-                req.sendall(CORRECT_MESSAGE)
+            if data.startswith("ENCRYPT:"):
+                # Call the encryption function when client sends a special "ENCRYPT" request
+                message_to_encrypt = data[len("ENCRYPT:"):].strip()
+                encrypted_message = encrypt_message(message_to_encrypt)
+                await websocket.send(encrypted_message)
             else:
-                # Send Unauthorized if the decrypted message is different from the original message
-                req.sendall(INVALID_MESSAGE)
-
-        except ValueError:
-            # Send Invalid padding if the padding is incorrect
-            req.sendall(INVALID_PADDING)
+                # Decrypt the received ciphertext if not an "ENCRYPT" request
+                ciphertext = data.encode('utf-8')
+                decrypted_message = decrypt_message(ciphertext)
+                await websocket.send(decrypted_message)
 
         except Exception as e:
-            print(e)
             break
 
+def encrypt_message(message: str) -> str:
+    padded_plaintext = pad(message.encode("utf-8"), AES.block_size)
+    cipher = AES.new(KEY, AES.MODE_CBC, IV)
+    encrypted = cipher.encrypt(padded_plaintext)
+    ciphertext = b64encode(encrypted).decode('utf-8')
+    return ciphertext
 
-def main():
-    # print(f"Plaintext: {MESSAGE}")
+def decrypt_message(ciphertext: bytes) -> str:
+    try:
+        ciphertext = b64decode(ciphertext)
+        padded_plaintext = AES.new(KEY, AES.MODE_CBC, IV).decrypt(ciphertext)
+        plaintext = unpad(padded_plaintext, AES.block_size)
+        return plaintext
+
+        # if plaintext == MESSAGE:
+        #     # Send OK if the decrypted message is the same as the original message
+        #     return CORRECT_MESSAGE
+        # else:
+        #     # Send Unauthorized if the decrypted message is different from the original message
+        #     return INVALID_MESSAGE
+
+    except ValueError:
+        # Send Invalid padding if the padding is incorrect
+        return INVALID_PADDING
+
+    except Exception as e:
+        print(f"Decryption error: {e}")
+        return INVALID_MESSAGE
+
+async def main():
+    # Start the WebSocket server
     padded_plaintext = pad(MESSAGE, AES.block_size)
     # print(f"Padded plaintext: {padded_plaintext}")
 
@@ -78,12 +82,9 @@ def main():
     ciphertext = b64encode(encrypted_ciphertext)
     print(f"Encoded Ciphertext: {ciphertext}")
 
-    socketserver.TCPServer.allow_reuse_address = True
-    server = TCPServer((SERVER_IP, SERVER_PORT), ChallengeRequestHandler)
+    server = await websockets.serve(handle_connection, SERVER_IP, SERVER_PORT)
     print(f"Server started on {SERVER_IP}:{SERVER_PORT}")
-
-    server.serve_forever()
-
+    await server.wait_closed()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
