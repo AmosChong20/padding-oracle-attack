@@ -8,8 +8,8 @@ from shared_constants import SERVER_IP, SERVER_PORT, INVALID_PADDING
 from Crypto.Util.Padding import unpad
 
 # Attacker to fill in the following values
-CIPHERTEXT =  b'2PgoWm1gaXd4y7AZWIPMA32kDjoB+yd6BaTLI2vUgnM='
-IV = b'\x03\xd5\xcb\xfe\xa5\xf2\x8fo;\x9c\xe75\x83\x87\xbe\xbb'
+CIPHERTEXT = b"2PgoWm1gaXd4y7AZWIPMA32kDjoB+yd6BaTLI2vUgnM="
+IV = b"\x03\xd5\xcb\xfe\xa5\xf2\x8fo;\x9c\xe75\x83\x87\xbe\xbb"
 
 BLOCK_SIZE = AES.block_size
 
@@ -22,9 +22,11 @@ async def send_and_receive(ciphertext):
 
 
 async def padding_oracle_attack(iv, ciphertext):
-    blocks = [iv] + [ciphertext[i:i + BLOCK_SIZE] for i in range(0, len(ciphertext), BLOCK_SIZE)]
+    blocks = [iv] + [
+        ciphertext[i : i + BLOCK_SIZE] for i in range(0, len(ciphertext), BLOCK_SIZE)
+    ]
     print(f"Blocks: {blocks}")
-    decrypted_message = b''
+    decrypted_message = b""
 
     for block_index in range(len(blocks) - 1):
         print(f"Block index: {block_index}")
@@ -59,7 +61,7 @@ async def padding_oracle_attack(iv, ciphertext):
 async def main():
     # Decode base64 ciphertext received from the server
     decoded_ciphertext = b64decode(CIPHERTEXT)
-    
+
     # Use padding oracle attack to retrieve the plaintext
     plaintext = await padding_oracle_attack(IV, decoded_ciphertext)
 

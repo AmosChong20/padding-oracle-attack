@@ -22,7 +22,8 @@ print(
     f"[DEBUG] KEY: {KEY}, IV: {IV}, KEY hex: {KEY.hex()}, IV hex: {IV.hex()}, MESSAGE length: {len(MESSAGE)}"
 )
 
-async def handle_connection(websocket, path):
+
+async def handle_connection(websocket):
     while True:
         try:
             data = await websocket.recv()
@@ -30,26 +31,29 @@ async def handle_connection(websocket, path):
                 break
             if data.startswith("ENCRYPT:"):
                 # Call the encryption function when client sends a special "ENCRYPT" request
-                message_to_encrypt = data[len("ENCRYPT:"):].strip()
+                message_to_encrypt = data[len("ENCRYPT:") :].strip()
                 encrypted_message = encrypt_message(message_to_encrypt)
                 await websocket.send(encrypted_message)
             else:
                 # Decrypt the received ciphertext if not an "ENCRYPT" request
-                ciphertext = data.encode('utf-8')
+                ciphertext = data.encode("utf-8")
                 decrypted_message = decrypt_message(ciphertext)
                 await websocket.send(decrypted_message)
 
         except Exception as e:
+            print(f"Error: {e}")
             break
+
 
 def encrypt_message(message: str) -> str:
     padded_plaintext = pad(message.encode("utf-8"), AES.block_size)
     cipher = AES.new(KEY, AES.MODE_CBC, IV)
     encrypted = cipher.encrypt(padded_plaintext)
-    ciphertext = b64encode(encrypted).decode('utf-8')
+    ciphertext = b64encode(encrypted).decode("utf-8")
     return ciphertext
 
-def decrypt_message(ciphertext: bytes) -> str:
+
+def decrypt_message(ciphertext: bytes) -> bytes:
     try:
         ciphertext = b64decode(ciphertext)
         padded_plaintext = AES.new(KEY, AES.MODE_CBC, IV).decrypt(ciphertext)
@@ -71,6 +75,7 @@ def decrypt_message(ciphertext: bytes) -> str:
         print(f"Decryption error: {e}")
         return INVALID_MESSAGE
 
+
 async def main():
     # Start the WebSocket server
     padded_plaintext = pad(MESSAGE, AES.block_size)
@@ -85,6 +90,7 @@ async def main():
     server = await websockets.serve(handle_connection, SERVER_IP, SERVER_PORT)
     print(f"Server started on {SERVER_IP}:{SERVER_PORT}")
     await server.wait_closed()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
