@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: sc4010-mongo
+    ports:
+      - "27035:27017"
+    volumes:
+      - ./data:/data/db
+
+volumes:
+  data:
