@@ -41,7 +41,6 @@ async def handle_connection(websocket):
                 await websocket.send(decrypted_message)
 
         except Exception as e:
-            print(f"Error: {e}")
             break
 
 
