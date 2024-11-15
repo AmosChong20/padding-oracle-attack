@@ -4,7 +4,6 @@ const cors = require('cors');
 const WebSocket = require('ws');
 const mongoose = require('mongoose');
 const User = require('./models/user');
-const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = 3001;
@@ -29,14 +28,13 @@ async function decryptMiddleware(req, res, next) {
     console.log('WebSocket connection not open');
     return res.status(500).send({ error: 'WebSocket connection not open' });
   }
-  console.log(`Received encrypted data: ${encryptedData}`);
+  console.log(`\n\nReceived encrypted data: ${encryptedData}`);
   // Send the encrypted message through the WebSocket
   console.log("----------------------Perform decryption----------------------");
   ws.send(encryptedData);
 
   // Handle the response from the WebSocket server
   ws.on('message', (data) => {
-    console.log(`Decrypted data: ${data}`);
     const decryptedData = JSON.parse(data);
     req.body.decryptedData = decryptedData;
     next();
@@ -65,8 +63,8 @@ app.post('/register', decryptMiddleware, async (req, res) => {
   }
 });
 
-app.post('/login', decryptMiddleware, async (req, res) => {
-  const { username, password } = req.body.decryptedData;
+app.post('/make-payment', async (req, res) => {
+  const { username, amount } = req.body;
 
   try {
     const user = await User.findOne({ username });
@@ -75,13 +73,38 @@ app.post('/login', decryptMiddleware, async (req, res) => {
       return res.status(404).send({ error: 'User not found' });
     }
 
+    user.accountBalance -= amount;
+    await user.save();
+
+    res.status(200).json({ accountBalance: user.accountBalance });
+  } catch (error) {
+    console.error('Error making payment:', error);
+    return res.status(500).send({ error: 'Internal server error' });
+  }
+});
+
+app.post('/login', decryptMiddleware, async (req, res) => {
+  console.log(req.body.decryptedData);
+  const { username, password } = req.body.decryptedData;
+  console.log("Validating user....");
+
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      console.log("User not found");
+      return res.status(404).send({ error: 'User not found' });
+    }
+
     // const isPasswordValid = bcrypt.compareSync(password, user.password);
     const isPasswordValid = password === user.password;
     if (!isPasswordValid) {
+      console.log("Invalid password");
       return res.status(401).send({ error: 'Invalid password' });
     }
 
-    res.status(200).json({ message: 'Login successful' });
+    console.log("User logged in successfully");
+    res.status(200).json({ accountBalance: user.accountBalance });
   } catch (error) {
     console.error('Error logging in:', error);
     return res.status(500).send({ error: 'Internal server error' });
@@ -89,7 +112,7 @@ app.post('/login', decryptMiddleware, async (req, res) => {
 });
 
 
-const mongoURI = 'mongodb://localhost:27035/users';
+const mongoURI = 'mongodb://user:password@localhost:27035/website_demo';
 
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,

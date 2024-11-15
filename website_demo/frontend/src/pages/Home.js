@@ -1,19 +1,27 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { useAuth } from '../context/authContext';
 
 const Home = () => {
-  const { user, logout } = useAuth();
-  const [balance, setBalance] = useState(350000);
+  const { user, balance, logout } = useAuth();
+  const [localBalance, setBalance] = useState(balance);
 
-  const handleTranfer = () => {
-    setBalance(balance - 1000);
+  const handleTranfer = async () => {
+    const response = await fetch('http://localhost:3001/make-payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username: user, amount: 1000 }),
+    });
+    const data = await response.json();
+    setBalance(data.accountBalance);
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.title}>Welcome, {user}!</h1>
-        <p style={styles.subtitle}>Your account balance is S$ {balance.toLocaleString()}</p>
+        <p style={styles.subtitle}>Your account balance is S$ {localBalance.toLocaleString()}</p>
         <button 
           onClick={handleTranfer} 
           style={styles.transferButton}

@@ -3,11 +3,16 @@ version: '3'
 services:
   mongo:
     image: mongo:latest
+    restart: always
     container_name: sc4010-mongo
     ports:
       - "27035:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
       - ./data:/data/db
+      - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
 
 volumes:
   data:

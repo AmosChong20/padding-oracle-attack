@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    accountBalance: {
+        type: Number,
+        default: 350000,
+    },
 })
 
 const User = mongoose.model('User', userSchema);

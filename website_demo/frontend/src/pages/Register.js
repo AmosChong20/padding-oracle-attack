@@ -42,32 +42,42 @@ const Register = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (encryptedData) {
+      (async () => {
+        try {
+          const response = await fetch('http://localhost:3001/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ encryptedData: encryptedData })
+          });
+    
+          if (response.ok) {
+            setAlertMessage("Registration successful!");
+            setShowAlert(true);
+          } else {
+            setAlertMessage("Failed to register");
+            setShowAlert(true);
+          }
+        } catch (err) {
+          setAlertMessage("Error registering user");
+          setShowAlert(true);
+          console.error(err);
+        }
+      })();
+    }
+  }, [encryptedData]);
+
   const handleRegister = async () => {
     try {
-      const response = await fetch('http://localhost:3001/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ encryptedData: encryptedData })
-      });
-
-      if (response.ok) {
-        setAlertMessage("Registration successful!");
+      if (!data.username || !data.password) {
+        setAlertMessage("Please enter username and password");
         setShowAlert(true);
-      } else {
-        setAlertMessage("Failed to register");
-        setShowAlert(true);
+        return;
       }
-    } catch (err) {
-      setAlertMessage("Error registering user");
-      setShowAlert(true);
-      console.error(err);
-    }
-  };
 
-  const handleEncrypt = async () => {
-    try {
       if (socket && socket.readyState === WebSocket.OPEN) {
         const clientData = "ENCRYPT:" + JSON.stringify(data);
         socket.send(clientData);
@@ -115,15 +125,7 @@ const Register = () => {
       }}
       style={styles.input}
     />
-    <button onClick={handleEncrypt} style={styles.button}>Encrypt Data</button>
-    {encryptedData && (
-      <>
-        <button onClick={handleRegister} style={styles.button}>Register</button>
-        <div style={styles.encryptedDataContainer}>
-          <p style={styles.encryptedText}>Encrypted Data: {encryptedData}</p>
-        </div>
-      </>
-    )}
+    <button onClick={handleRegister} style={styles.button}>Register</button>
     <button onClick={() => navigate('/login')} style={styles.createAccountButton}>Already have an account?</button>
   </div>
   

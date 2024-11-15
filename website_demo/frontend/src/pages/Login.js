@@ -48,27 +48,55 @@ const Login = () => {
   }
   , []);
 
+  useEffect(() => {
+    if (encryptedData) {
+      (async () => {
+        try {
+          const response = await fetch('http://localhost:3001/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ encryptedData }),
+          });
+
+          if (response.ok) {
+            const responseData = await response.json();
+            login(data.username, responseData.accountBalance);
+            navigate('/');
+          } else {
+            setAlertMessage('User does not exist or password is wrong');
+            setShowAlert(true);
+          }
+        } catch (err) {
+          console.error('Error during login:', err);
+          setAlertMessage('Error occurred while logging in');
+          setShowAlert(true);
+        }
+      })();
+    }
+  }, [encryptedData]);
+
   const handleLogin = async() => {
     try {
-      const response = await fetch('http://localhost:3001/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ encryptedData: encryptedData }),
-      });
-
-      if (response.ok) {
-        const responseData = await response.json();
-
-        login(data.username);
-        navigate('/');
-      } else {
-        setAlertMessage('User does not exist or password is wrong');
+      if (!data.username || !data.password) {
+        setAlertMessage('Please enter username and password');
         setShowAlert(true);
+        return;
       }
+      
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        // Send message to Python server for encryption
+        const client_data = "ENCRYPT:" + JSON.stringify(data);
+        socket.send(client_data);
+      } else {
+        console.log("WebSocket not connected");
+        setError("WebSocket connection is not established");
+        return;
+      }
+
     } catch (err) {
-      setAlertMessage('User does not exist or password is wrong');
+      setAlertMessage('Error occurred while logging in');
       setShowAlert(true);
       console.error(err);
     }
@@ -123,15 +151,7 @@ const Login = () => {
       }}
       style={styles.input}
     />
-    <button onClick={handleEncrypt} style={styles.button}>Encrypt Data</button>
-    {encryptedData && (
-      <>
-        <button onClick={handleLogin} style={styles.button}>Login</button>
-        <div style={styles.encryptedDataContainer}>
-          <p style={styles.encryptedText}>Encrypted Data: {encryptedData}</p>
-        </div>
-      </>
-    )}
+    <button onClick={handleLogin} style={styles.button}>Login</button>
     <button onClick={() => navigate('/register')} style={styles.createAccountButton}>Create Account</button>
   </div>
   
