@@ -18,9 +18,9 @@ MESSAGE = b"Hello, this is a test message!"
 KEY = get_random_bytes(AES.block_size)
 IV = get_random_bytes(AES.block_size)
 
-print(
-    f"[DEBUG] KEY: {KEY}, IV: {IV}, KEY hex: {KEY.hex()}, IV hex: {IV.hex()}, MESSAGE length: {len(MESSAGE)}"
-)
+# print(
+#     f"[DEBUG] KEY: {KEY}, IV: {IV}, KEY hex: {KEY.hex()}, IV hex: {IV.hex()}, MESSAGE length: {len(MESSAGE)}"
+# )
 
 
 async def handle_connection(websocket):
@@ -34,6 +34,18 @@ async def handle_connection(websocket):
                 message_to_encrypt = data[len("ENCRYPT:") :].strip()
                 encrypted_message = encrypt_message(message_to_encrypt)
                 await websocket.send(encrypted_message)
+            elif data.startswith("CONSOLE:"):
+                ciphertext = data.lstrip("CONSOLE:").encode("utf-8")
+                decrypted_message = decrypt_message(ciphertext)
+
+                if decrypted_message == INVALID_PADDING:
+                    await websocket.send(INVALID_PADDING)
+                else:
+                    await websocket.send(
+                        CORRECT_MESSAGE
+                        if decrypted_message == MESSAGE
+                        else INVALID_MESSAGE
+                    )
             else:
                 # Decrypt the received ciphertext if not an "ENCRYPT" request
                 ciphertext = data.encode("utf-8")
@@ -77,12 +89,15 @@ def decrypt_message(ciphertext: bytes) -> bytes:
 
 async def main():
     # Start the WebSocket server
-    padded_plaintext = pad(MESSAGE, AES.block_size)
-    # print(f"Padded plaintext: {padded_plaintext}")
 
+    # Padding the message to be encrypted
+    padded_plaintext = pad(MESSAGE, AES.block_size)
+
+    # Encrypt the padded message
     block_cipher = AES.new(KEY, AES.MODE_CBC, IV)
     encrypted_ciphertext = block_cipher.encrypt(padded_plaintext)
 
+    # Perform base64 encoding on the encrypted ciphertext for transmission
     ciphertext = b64encode(encrypted_ciphertext)
     print(f"Encoded Ciphertext: {ciphertext}")
 

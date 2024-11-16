@@ -14,12 +14,12 @@ async def send_message(ciphertext):
 async def main():
     while True:
         ciphertext = input(
-            "Enter base64 encoded ciphertext to send to the server (or 'Q' to exit): "
+            "Enter base64 encoded ciphertext to send to the server (or 'q' to exit): "
         )
-        if ciphertext.lower() == "Q":
+        if ciphertext == "q":
             break
 
-        response = await send_message(ciphertext)
+        response = await send_message(f"CONSOLE:{ciphertext}")
         print(f"Server response: {response}")
 
 
