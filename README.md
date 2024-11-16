@@ -63,7 +63,7 @@ deactivate
 
 ```
 padding-oracle-attack/
-│
+├── website_demo/          # Contains the demo website for a bank account login
 ├── challenge_server.py    # Server implementation for the padding oracle
 ├── attack_client.py       # Client implementation for the padding oracle attack
 ├── shared_constants.py    # Contains shared constants for server and client
