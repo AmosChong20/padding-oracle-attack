@@ -8,8 +8,8 @@ from shared_constants import SERVER_IP, SERVER_PORT, INVALID_PADDING
 from Crypto.Util.Padding import unpad
 
 # Attacker to fill in the following values
-CIPHERTEXT =  b'03MdZ2FPUDXoVrVQh17vgqiak7Es1Sax+juuxCdLLzWJrNLEeYxcQN60W1f0aZQI'
-IV = b'\x0e\x8e\xd8\xba\xc7\xea\x04Y\xe0\xf7\xb32\xc5>;\xf9'
+CIPHERTEXT =  b'x7EurLu7z2oAzTsMHlB7eWD0AoPp6tf6Qyop5VU/15PmNhaHtFm/TdlGxneyx3bF'
+IV = b'WM\x1e\xef\n\nPUK\x98\x10nP_i\xd6'
 
 BLOCK_SIZE = AES.block_size
 
@@ -68,7 +68,7 @@ async def main():
     # Use padding oracle attack to retrieve the plaintext
     plaintext = await padding_oracle_attack(IV, decoded_ciphertext)
 
-    print(f"Decrypted message: {unpad(plaintext, BLOCK_SIZE)}")
+    print(f"\n\033[33mDecrypted message: {unpad(plaintext, BLOCK_SIZE)}\033[0m")
 
 
 if __name__ == "__main__":

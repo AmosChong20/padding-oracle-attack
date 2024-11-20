@@ -21,6 +21,8 @@ IV = get_random_bytes(AES.block_size)
 # print(
 #     f"[DEBUG] KEY: {KEY}, IV: {IV}, KEY hex: {KEY.hex()}, IV hex: {IV.hex()}, MESSAGE length: {len(MESSAGE)}"
 # )
+print(f"\n\n\033[31mKEY (SECRET): {KEY}\033[0m\n\n")
+print(f"\033[33mIV (PUBLIC): {IV}\033[0m\n\n")
 
 
 async def handle_connection(websocket):
